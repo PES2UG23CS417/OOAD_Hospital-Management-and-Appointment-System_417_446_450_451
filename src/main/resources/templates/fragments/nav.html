@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  FIX: #httpServletRequest is only exposed by thymeleaf-extras-springsecurity6 when
+  Spring Security is on the classpath. Since this project has no spring-boot-starter-security,
+  #httpServletRequest is null → EL1007E crash on every page that includes this nav.
+
+  Fix: Use ${currentUri}, a plain String model attribute added by GlobalModelAdvice
+  (which reads HttpServletRequest.getRequestURI()). No Spring Security dependency needed.
+-->
+<nav th:fragment="navbar"
+     style="background:#1a5276;padding:0 32px;height:60px;display:flex;align-items:center;
+            justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.18);
+            position:sticky;top:0;z-index:100;font-family:'Segoe UI',Arial,sans-serif">
+
+  <a href="/" style="font-size:18px;font-weight:700;color:white;text-decoration:none">
+    🏥 Hospital <span style="color:#aed6f1">Management System</span>
+  </a>
+
+  <div style="display:flex;align-items:center;gap:2px">
+
+    <!-- Hospital Staff links -->
+    <span th:if="${userRole == 'HOSPITAL_STAFF'}">
+      <a href="/patients"
+         th:classappend="${currentUri != null and currentUri.startsWith('/patients')} ? 'nav-active'"
+         style="color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;font-weight:500;
+                padding:7px 13px;border-radius:6px;transition:background .15s">
+        👥 Patients
+      </a>
+      <a href="/doctors"
+         th:classappend="${currentUri != null and currentUri.startsWith('/doctors')} ? 'nav-active'"
+         style="color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;font-weight:500;
+                padding:7px 13px;border-radius:6px;transition:background .15s">
+        🩺 Doctors
+      </a>
+      <a href="/appointments/staff-dashboard"
+         th:classappend="${currentUri != null and currentUri.startsWith('/appointments')} ? 'nav-active'"
+         style="color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;font-weight:500;
+                padding:7px 13px;border-radius:6px;transition:background .15s">
+        📅 Appointments
+      </a>
+    </span>
+
+    <!-- Patient links -->
+    <span th:if="${userRole == 'PATIENT'}">
+      <a href="/appointments/patient-dashboard"
+         th:classappend="${currentUri != null and currentUri.contains('patient-dashboard')} ? 'nav-active'"
+         style="color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;font-weight:500;
+                padding:7px 13px;border-radius:6px">
+        📅 My Appointments
+      </a>
+      <a href="/appointments/book"
+         th:classappend="${currentUri != null and currentUri.contains('book')} ? 'nav-active'"
+         style="color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;font-weight:500;
+                padding:7px 13px;border-radius:6px">
+        ➕ Book Appointment
+      </a>
+    </span>
+
+    <!-- Finance Admin links -->
+    <span th:if="${userRole == 'FINANCE_ADMIN'}">
+      <a href="/billing"
+         th:classappend="${currentUri != null and currentUri.startsWith('/billing')} ? 'nav-active'"
+         style="color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;font-weight:500;
+                padding:7px 13px;border-radius:6px">
+        🧾 Billing
+      </a>
+    </span>
+
+    <a href="/logout"
+       style="color:white;text-decoration:none;font-size:12px;font-weight:600;
+              padding:6px 13px;border-radius:6px;background:rgba(255,255,255,.15);margin-left:10px">
+      Logout
+    </a>
+  </div>
+
+  <!-- Active link highlight style -->
+  <style>
+    nav a.nav-active { background: rgba(255,255,255,.22) !important; }
+    nav a:hover      { background: rgba(255,255,255,.12) !important; }
+  </style>
+</nav>
+</body>
+</html>

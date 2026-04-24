@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8"/><title>Appointment Manager – HMS</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",Arial,sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
+    .page{max-width:1100px;margin:0 auto;padding:28px 24px}
+    .two-col{display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:start}
+    .page-title{font-size:20px;font-weight:700;color:#1a5276;margin-bottom:20px}
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;border:none;cursor:pointer;white-space:nowrap;transition:opacity .18s}
+    .btn:hover{opacity:.87}.btn-primary{background:#1a5276;color:white}.btn-danger{background:#e53e3e;color:white}.btn-success{background:#38a169;color:white}.btn-ghost{background:#edf2f7;color:#4a5568}.btn-sm{padding:5px 12px;font-size:12px}
+    .alert{padding:11px 14px;border-radius:7px;margin-bottom:16px;font-size:13px}
+    .alert-success{background:#f0fff4;border-left:4px solid #48bb78;color:#276749}
+    .alert-error{background:#fff5f5;border-left:4px solid #fc8181;color:#c53030}
+    .card{background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;margin-bottom:18px}
+    .card-header{background:#1a5276;color:white;padding:16px 20px}
+    .card-header h2{font-size:15px;font-weight:700}.card-header p{font-size:11px;color:#aed6f1;margin-top:2px}
+    .card-body{padding:20px}
+    label{font-size:12px;font-weight:600;color:#4a5568;display:block;margin-bottom:4px}
+    select,input{padding:9px 12px;border:1.5px solid #cbd5e0;border-radius:7px;font-size:13px;width:100%;outline:none;background:white;margin-bottom:10px;transition:border-color .18s}
+    select:focus,input:focus{border-color:#2471a3;box-shadow:0 0 0 3px rgba(36,113,163,.13)}
+    table{width:100%;border-collapse:collapse}
+    thead th{background:#1a5276;color:white;padding:11px 13px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    tbody tr{border-bottom:1px solid #edf2f7}tbody tr:last-child{border-bottom:none}tbody tr:hover{background:#f7fafc}
+    tbody td{padding:10px 13px;font-size:13px;color:#4a5568}
+    .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+    .badge-SCHEDULED{background:#ebf8ff;color:#2b6cb0}.badge-RESCHEDULED{background:#fffaf0;color:#c05621}.badge-CANCELLED{background:#fff5f5;color:#c53030}.badge-COMPLETED{background:#f0fff4;color:#276749}
+    .slot-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1px solid #e2e8f0;border-radius:7px;margin-bottom:8px;font-size:13px;background:#f7fafc}
+    .empty-msg{text-align:center;color:#718096;padding:28px;font-size:13px}
+  </style>
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: navbar}"></nav>
+<div class="page">
+  <div class="page-title">📅 Appointment Manager — Hospital Staff</div>
+  <div th:if="${successMsg}" class="alert alert-success" th:text="${successMsg}"></div>
+  <div th:if="${errorMsg}"   class="alert alert-error"   th:text="${errorMsg}"></div>
+  <div class="two-col">
+    <!-- All Appointments -->
+    <div>
+      <div class="card">
+        <div class="card-header"><h2>All Appointments</h2><p>Manage all patient appointments</p></div>
+        <div th:if="${!appointments.isEmpty()}">
+          <table>
+            <thead><tr><th>#</th><th>Patient</th><th>Doctor</th><th>Date &amp; Time</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr th:each="a : ${appointments}">
+                <td th:text="${a.id}"></td>
+                <td th:text="${a.patientName}"></td>
+                <td th:text="${a.doctorName}"></td>
+                <td th:text="${#temporals.format(a.appointmentTime,'dd MMM yyyy, HH:mm')}"></td>
+                <td><span class="badge" th:classappend="'badge-' + ${a.status}" th:text="${a.status.displayName}"></span></td>
+                <td>
+                  <form th:if="${a.status.canBeCancelled()}" th:action="@{/appointments/cancel/{id}(id=${a.id})}" method="post" style="display:inline">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Cancel?')">✕</button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-msg" th:if="${appointments.isEmpty()}">No appointments yet.</div>
+      </div>
+    </div>
+    <!-- Slot Management -->
+    <div>
+      <div class="card">
+        <div class="card-header"><h2>🕐 Add Availability Slot</h2><p>Add a slot for a specific doctor</p></div>
+        <div class="card-body">
+          <form th:action="@{/appointments/add-slot}" method="post">
+            <label>Select Doctor</label>
+            <select name="doctorId" required>
+              <option value="" disabled selected>— Choose Doctor —</option>
+              <option th:each="d : ${doctors}" th:value="${d.doctorId}" th:text="${d.name + ' (' + d.specialization + ')'}"></option>
+            </select>
+            <label>Date &amp; Time</label>
+            <input type="datetime-local" name="slotTime" required/>
+            <button type="submit" class="btn btn-success" style="width:100%;justify-content:center">＋ Add Slot</button>
+          </form>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>📋 Open Slots</h2></div>
+        <div class="card-body">
+          <div th:if="${availableSlots.isEmpty()}" style="color:#718096;font-size:13px">No open slots yet.</div>
+          <div th:each="slot : ${availableSlots}" class="slot-item">
+            <div>
+              <strong th:text="${slot.doctorName}"></strong><br/>
+              <small th:text="${#temporals.format(slot.slotTime,'dd MMM yyyy, HH:mm')}"></small>
+            </div>
+            <span style="font-size:11px;color:#38a169;font-weight:700">OPEN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
